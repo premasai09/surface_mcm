@@ -29,10 +29,22 @@ function LoginPage({ onLogin }) {
 function ResultsDisplay({ results }) {
   if (!results) return null;
 
+  // Helper to download HTML content as file
+  const downloadHtml = (html, filename) => {
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="mt-8 space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">Campaign Results</h2>
-      
       {/* Audience Segments Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <div className="flex items-center mb-3">
@@ -56,7 +68,29 @@ function ResultsDisplay({ results }) {
           {results.content.map((item, index) => (
             <div key={index} className="p-3 bg-white rounded-md border border-gray-200">
               <h4 className="text-indigo-600 font-medium mb-2">{item.segment}</h4>
-              <p className="text-gray-700">{item.copy}</p>
+              {/* Render HTML content safely */}
+              {item.type === 'email' && (
+                <div className="mb-2 border border-gray-100 rounded bg-gray-50 p-2 overflow-x-auto" style={{ maxHeight: 300 }}>
+                  <iframe
+                    title={`Email HTML Preview ${index}`}
+                    srcDoc={item.html}
+                    style={{ width: '100%', minHeight: 200, border: 'none', background: 'white' }}
+                  />
+                </div>
+              )}
+              {/* Download button for HTML */}
+              {item.type === 'email' && (
+                <button
+                  className="mt-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+                  onClick={() => downloadHtml(item.html, `${item.segment.replace(/\s+/g, '_')}.html`)}
+                >
+                  Download HTML
+                </button>
+              )}
+              {/* For other types, just show the content */}
+              {item.type !== 'email' && (
+                <p className="text-gray-700">{item.html || item.copy}</p>
+              )}
             </div>
           ))}
         </div>
